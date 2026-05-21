@@ -9,6 +9,7 @@ import {
   obtenerTallesDisponibles,
 } from "../../utils/opcionesCatalogo";
 import { normalizarImagenUrl } from "../../utils/imagenes";
+import { registrarError } from "../../utils/logger";
 import { normalizarImagenesProducto } from "../../utils/productoMedia";
 import CreatableTagSelector from "../common/CreatableTagSelector";
 import ProductPreview from "./ProductPreview";
@@ -292,7 +293,7 @@ export default function ProductForm({ product, products = [], onSubmit, onCancel
         }
       })
       .catch((loadError) => {
-        console.error(loadError);
+        registrarError("Error al cargar colores globales en el formulario", loadError);
         if (activo) {
           setColorError("No se pudieron cargar los colores globales.");
         }
@@ -374,7 +375,7 @@ export default function ProductForm({ product, products = [], onSubmit, onCancel
 
       return colorCreado;
     } catch (createError) {
-      console.error(createError);
+      registrarError("Error al crear un color global", createError);
       setColorError(createError.message || "No se pudo crear el color.");
       return null;
     } finally {

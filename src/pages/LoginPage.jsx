@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ADMIN_LOGIN_CONFIG } from "../config/apiConfig";
 
 const AUTH_KEY = "vtech_admin_auth";
 
@@ -18,11 +19,17 @@ export default function LoginPage({ onLogin, onBack }) {
   const [usuario, setUsuario] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const adminLoginConfigurado = Boolean(ADMIN_LOGIN_CONFIG.user && ADMIN_LOGIN_CONFIG.password);
 
   const handleSubmit = (event) => {
     event.preventDefault();
 
-    if (usuario === "admin" && password === "admin123") {
+    if (!adminLoginConfigurado) {
+      setError("El acceso admin no está configurado para este entorno.");
+      return;
+    }
+
+    if (usuario === ADMIN_LOGIN_CONFIG.user && password === ADMIN_LOGIN_CONFIG.password) {
       guardarSesionAdmin();
       setError("");
       onLogin();
@@ -37,6 +44,10 @@ export default function LoginPage({ onLogin, onBack }) {
       <section className="contact-form-wrapper admin-login">
         <h1 className="contact-hero__title">Acceso empresa</h1>
         <p className="contact-hero__subtitle">Ingresá para administrar los productos del catálogo.</p>
+        <p className="tag-selector__helper">
+          Control básico de acceso visual. La protección administrativa mínima está en Apps Script
+          mediante token.
+        </p>
 
         <form onSubmit={handleSubmit}>
           <div className="contact-form__group">

@@ -7,6 +7,7 @@ import { ordenamientos } from "../data/filtros";
 import { obtenerColores } from "../services/coloresService";
 import { obtenerProductosActivos, refrescarProductos } from "../services/productosService";
 import { filtrarProductos } from "../utils/filtrarProductos";
+import { registrarError } from "../utils/logger";
 import {
   obtenerColoresDisponibles,
   obtenerPropiedadesDisponibles,
@@ -77,7 +78,7 @@ export default function CatalogPage() {
 
       setProductos(productosObtenidos);
     } catch (loadError) {
-      console.error(loadError);
+      registrarError("Error al cargar productos del catálogo", loadError);
       setError("No se pudieron cargar los productos.");
     } finally {
       setLoading(false);
@@ -102,7 +103,7 @@ export default function CatalogPage() {
         }
       })
       .catch((loadError) => {
-        console.error(loadError);
+        registrarError("Error al cargar colores globales del catálogo", loadError);
       });
 
     return () => {

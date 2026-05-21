@@ -1,4 +1,4 @@
-const ADMIN_API_TOKEN = "CAMBIAR_POR_UN_TOKEN_SEGURO";
+const ADMIN_API_TOKEN = "CAMBIAR_POR_TOKEN_SEGURO";
 
 const NOMBRE_HOJA_PRODUCTOS = "productos";
 const NOMBRE_HOJA_ELIMINADOS = "productos_eliminados";

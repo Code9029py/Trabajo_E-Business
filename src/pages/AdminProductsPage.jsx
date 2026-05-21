@@ -13,6 +13,7 @@ import {
   refrescarProductos,
   reactivarProducto,
 } from "../services/productosService";
+import { registrarError } from "../utils/logger";
 import { normalizarTexto } from "../utils/normalizarTexto";
 
 function obtenerLabel(lista, id) {
@@ -40,7 +41,7 @@ export default function AdminProductsPage({ onLogout, onBack }) {
       const productosObtenidos = forzar ? await refrescarProductos() : await obtenerProductos();
       setProductos(productosObtenidos);
     } catch (loadError) {
-      console.error(loadError);
+      registrarError("Error al cargar productos en administración", loadError);
       setError("No se pudieron cargar los productos.");
     } finally {
       setLoading(false);
@@ -98,7 +99,7 @@ export default function AdminProductsPage({ onLogout, onBack }) {
       await cargarProductos();
       setPanelMessage({ type: "success", text: "Producto guardado correctamente." });
     } catch (saveError) {
-      console.error(saveError);
+      registrarError("Error al guardar producto", saveError);
       setPanelMessage({
         type: "error",
         text: "No se pudo guardar el producto. Intentá nuevamente.",
@@ -119,7 +120,7 @@ export default function AdminProductsPage({ onLogout, onBack }) {
       await cargarProductos();
       setPanelMessage({ type: "success", text: "Producto ocultado correctamente." });
     } catch (hideError) {
-      console.error(hideError);
+      registrarError("Error al ocultar producto", hideError);
       setProductToHide(null);
       setPanelMessage({ type: "error", text: "No se pudo ocultar el producto." });
     } finally {
@@ -137,7 +138,7 @@ export default function AdminProductsPage({ onLogout, onBack }) {
       await cargarProductos();
       setPanelMessage({ type: "success", text: "Producto reactivado correctamente." });
     } catch (reactivateError) {
-      console.error(reactivateError);
+      registrarError("Error al reactivar producto", reactivateError);
       setPanelMessage({ type: "error", text: "No se pudo reactivar el producto." });
     } finally {
       setActionProduct(null);
@@ -164,7 +165,7 @@ export default function AdminProductsPage({ onLogout, onBack }) {
       await cargarProductos();
       setPanelMessage({ type: "success", text: "Producto eliminado definitivamente." });
     } catch (deleteError) {
-      console.error(deleteError);
+      registrarError("Error al eliminar producto definitivamente", deleteError);
       setProductToDelete(null);
       setPanelMessage({
         type: "error",

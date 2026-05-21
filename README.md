@@ -1,8 +1,8 @@
 # V-TECH React
 
-Sitio frontend de V-TECH construido con React y Vite. Incluye Inicio/Nosotros, Catalogo, Contacto y el panel `/admin` para administrar productos.
+Sitio frontend de V-TECH construido con React y Vite. Incluye Inicio/Nosotros, Catálogo, Contacto, panel `/admin`, productos desde Google Sheets mediante Apps Script, imágenes desde Google Drive, varias imágenes por producto, precio, carrito de consulta, favoritos locales y colores personalizados.
 
-## Instalacion
+## Instalación
 
 ```bash
 npm install
@@ -20,6 +20,25 @@ La app queda disponible en:
 http://127.0.0.1:5173
 ```
 
+## Variables de entorno
+
+Crear un archivo `.env` local a partir de `.env.example`. No subir `.env` al repositorio.
+
+```env
+VITE_PRODUCTOS_API_MODO=remoto
+VITE_APPS_SCRIPT_URL=https://script.google.com/macros/s/XXXXXXXX/exec
+VITE_ADMIN_API_TOKEN=CAMBIAR_POR_TOKEN_REAL
+VITE_ADMIN_USER=CAMBIAR_POR_USUARIO_ADMIN
+VITE_ADMIN_PASSWORD=CAMBIAR_POR_PASSWORD_ADMIN
+```
+
+Valores principales:
+
+- `VITE_PRODUCTOS_API_MODO`: `local` usa datos base/localStorage; `remoto` usa Apps Script.
+- `VITE_APPS_SCRIPT_URL`: URL publicada del Web App de Apps Script.
+- `VITE_ADMIN_API_TOKEN`: token enviado a Apps Script para acciones administrativas.
+- `VITE_ADMIN_USER` y `VITE_ADMIN_PASSWORD`: acceso visual básico al panel `/admin`.
+
 ## Build
 
 ```bash
@@ -27,6 +46,58 @@ npm run build
 ```
 
 El resultado se genera en `dist/`.
+
+## Deploy portable
+
+### A) Deploy genérico
+
+```bash
+npm install
+npm run build
+```
+
+Subir el contenido de `dist/` al hosting elegido.
+
+### B) Cloudflare Pages
+
+- Framework preset: React/Vite.
+- Build command: `npm run build`.
+- Output directory: `dist`.
+- Configurar las variables `VITE_PRODUCTOS_API_MODO`, `VITE_APPS_SCRIPT_URL`, `VITE_ADMIN_API_TOKEN`, `VITE_ADMIN_USER` y `VITE_ADMIN_PASSWORD`.
+
+### C) Vercel / Netlify
+
+- Build command: `npm run build`.
+- Output directory: `dist`.
+- Configurar las mismas variables de entorno `VITE_*`.
+- Para Netlify, `public/_redirects` mantiene el fallback SPA.
+
+### D) Hosting tradicional, cPanel, Hostinger o servidor propio
+
+Ejecutar `npm run build` y subir el contenido de `dist/`.
+
+Para rutas SPA como `/catalogo`, `/contacto` y `/admin`, el servidor debe devolver `index.html` cuando no encuentre un archivo físico:
+
+- Cloudflare Pages y Netlify usan `public/_redirects`.
+- Apache/cPanel puede usar `public/.htaccess`, incluido en este proyecto.
+- Nginx puede requerir `try_files`.
+- Algunos paneles de hosting tienen una opción de fallback o rewrite hacia `index.html`.
+
+## Rutas SPA
+
+El proyecto incluye:
+
+```text
+public/_redirects
+```
+
+con:
+
+```text
+/* /index.html 200
+```
+
+Esto ayuda en Cloudflare Pages y Netlify. En otros hostings se debe configurar el fallback equivalente.
 
 ## Panel admin
 
@@ -36,26 +107,29 @@ Entrar a:
 http://127.0.0.1:5173/admin
 ```
 
-Desde `/admin` se pueden crear, editar, ocultar, reactivar y eliminar definitivamente productos. La eliminacion definitiva esta permitida solo para productos ocultos.
+Desde `/admin` se pueden crear, editar, ocultar, reactivar y eliminar definitivamente productos. La eliminación definitiva está permitida solo para productos ocultos.
 
-## Productos y catalogo
+El login del frontend es un control básico de acceso visual. No reemplaza una autenticación real de backend.
 
-El catalogo usa `src/services/productosService.js`. Puede funcionar en modo local o remoto segun `src/config/apiConfig.js`:
+## Productos y catálogo
 
-- `modo: "local"` usa los productos base de `src/data/products.js` y guarda cambios simulados en `localStorage`.
-- `modo: "remoto"` consulta Google Sheets mediante Apps Script.
+El catálogo usa `src/services/productosService.js`. Puede funcionar en modo local o remoto según `src/config/apiConfig.js` y las variables de entorno:
 
-Los productos publicos se filtran por `activo === true`. Los productos ocultos siguen visibles en `/admin`, pero no aparecen en el catalogo publico.
+- `local`: usa productos base de `src/data/products.js` y guarda cambios simulados en `localStorage`.
+- `remoto`: consulta Google Sheets mediante Apps Script.
+
+Los productos públicos se filtran por `activo === true`. Los productos ocultos siguen visibles en `/admin`, pero no aparecen en el catálogo público.
 
 ## Campos de producto
 
 El modelo mantiene compatibilidad con productos antiguos que solo tienen `imagenUrl`.
 
-- `precio`: texto opcional. Si contiene un numero, el catalogo lo muestra como `Gs. 120.000`. Si esta vacio, muestra `Precio a consultar`.
+- `precio`: texto opcional. Si contiene un número, el catálogo lo muestra como `Gs. 120.000`. Si está vacío, muestra `Precio a consultar`.
 - `imagenUrl`: imagen principal o fallback para productos antiguos.
-- `imagenes`: lista de imagenes del producto. Si tiene elementos, el catalogo y el admin la usan como galeria. Si esta vacia, se usa `imagenUrl`.
+- `imagenes`: lista de imágenes del producto. Si tiene elementos, el catálogo y el admin la usan como galería. Si está vacía, se usa `imagenUrl`.
+- `colores`: lista de strings, por ejemplo `["Verde petróleo", "Azul marino"]`.
 
-Todas las imagenes pasan por `normalizarImagenUrl`, que convierte enlaces compartidos de Google Drive a:
+Todas las imágenes pasan por `normalizarImagenUrl`, que convierte enlaces compartidos de Google Drive a:
 
 ```text
 https://drive.google.com/thumbnail?id=ID&sz=w700
@@ -71,12 +145,13 @@ colores, talles, medidas, caracteristicas, propiedades, estadoStock, precio,
 activo, destacado, imagenUrl, imagenes, fechaCreacion, fechaActualizacion
 ```
 
-Las columnas nuevas para esta etapa son:
+La hoja `colores` debe tener estas columnas:
 
 ```text
-precio
-imagenes
+id, nombre, slug, hex, activo, fechaCreacion, fechaActualizacion
 ```
+
+El Apps Script actualizado puede crear la hoja `colores` automáticamente si no existe.
 
 Formato de `imagenes`: varias URLs separadas por `|`.
 
@@ -84,33 +159,82 @@ Formato de `imagenes`: varias URLs separadas por `|`.
 https://drive.google.com/file/d/ID_1/view|https://drive.google.com/file/d/ID_2/view
 ```
 
-Formato de `precio`: numero o texto simple. Recomendado:
+Formato recomendado de `precio`:
 
 ```text
 120000
 ```
 
-## Carrito de consulta
+## Carrito, favoritos y colores
 
-El catalogo usa un carrito persistente en `localStorage` con la clave:
+El carrito de consulta usa `localStorage` con la clave:
 
 ```text
 vtech_cart
 ```
 
-Cada item guarda producto, imagen principal, precio, color, talle y cantidad. Si se agrega el mismo producto con el mismo color y talle, se suma cantidad. El drawer del carrito genera una unica consulta por WhatsApp con subtotales y total estimado cuando todos los productos tienen precio.
-
-## Imagenes institucionales
-
-Las imagenes de Inicio/Nosotros estan en:
+Los favoritos locales usan:
 
 ```text
-public/images/inicio/hero.png
-public/images/inicio/nosotros.jpeg
-public/images/inicio/sectores.jpeg
+vtech_favorites
 ```
 
-Sus rutas se configuran en `src/pages/HomePage.jsx`.
+Los colores personalizados se cargan desde la hoja global `colores`. Si un color no existe allí, el catálogo intenta resolverlo con el mapa base interno. Si tampoco existe, usa gris fallback.
+
+## Apps Script
+
+El script remoto está en `apps-script/productos.gs`.
+
+Antes de producción:
+
+- Copiar el contenido actualizado de `apps-script/productos.gs` en el editor de Apps Script real.
+- Reemplazar `ADMIN_API_TOKEN` en Apps Script por un token real y seguro.
+- Configurar el mismo token en `VITE_ADMIN_API_TOKEN` o, idealmente, en una capa backend/proxy privada.
+- Configurar `VITE_APPS_SCRIPT_URL` con la URL publicada del Web App de Apps Script.
+- Guardar el proyecto de Apps Script.
+- Ir a Deploy > Manage deployments.
+- Editar el Web App existente o crear una nueva versión.
+- Mantener el acceso del Web App igual que el despliegue actual.
+
+Apps Script soporta las acciones:
+
+```text
+listar, crear, editar, ocultar, reactivar, eliminarDefinitivo,
+listarColores, crearColor, editarColor, ocultarColor, reactivarColor
+```
+
+## Seguridad y consideraciones de producción
+
+Este proyecto es una app frontend estática. Las variables `VITE_*` se inyectan en el bundle final y pueden ser visibles desde el navegador. Por eso:
+
+- `VITE_ADMIN_API_TOKEN` no es un secreto fuerte si vive en el frontend.
+- `VITE_ADMIN_USER` y `VITE_ADMIN_PASSWORD` tampoco son credenciales fuertes.
+- El login de `/admin` sirve como control básico de acceso visual, no como seguridad real.
+- Apps Script valida token para operaciones administrativas y debe mantener esa validación.
+
+Para seguridad real en producción se recomienda agregar una capa backend/proxy entre el frontend y Apps Script. Esa capa puede implementarse con:
+
+- Cloudflare Pages Functions.
+- Vercel Serverless Functions.
+- Netlify Functions.
+- Firebase Functions.
+- Servidor Node/Express.
+- Backend propio del negocio.
+
+El proxy debería guardar `APPS_SCRIPT_URL` y `ADMIN_API_TOKEN` en variables privadas del servidor. El frontend debería llamar al proxy, no directamente a Apps Script.
+
+Para esta entrega, el proyecto queda portable y listo para que el equipo técnico del negocio decida dónde desplegarlo.
+
+## Limpieza de entrega
+
+Para entregar el código fuente, no es necesario incluir `node_modules/` ni `dist/`. El equipo técnico puede regenerar la versión publicada con:
+
+```bash
+npm install
+npm run build
+```
+
+Los errores técnicos controlados se registran solo en modo desarrollo mediante `src/utils/logger.js`; en producción no se imprimen detalles innecesarios en la consola del navegador.
 
 ## Contacto
 
@@ -121,23 +245,3 @@ El sitio usa estos datos principales:
 - Instagram y Threads: configurados en `src/pages/ContactPage.jsx`
 
 El email se muestra en Contacto con enlace `mailto:Ventas@vtech.com.py`.
-
-## Apps Script
-
-El script remoto esta en `apps-script/productos.gs`.
-
-Antes de produccion:
-
-- Reemplazar `ADMIN_API_TOKEN` en Apps Script por un token real y seguro.
-- Configurar el mismo token en `src/config/apiConfig.js`.
-- Configurar `PRODUCTOS_API_CONFIG.appsScriptUrl` con la URL publicada del Web App de Apps Script.
-- Agregar manualmente en Google Sheets las columnas `precio` e `imagenes`.
-- Copiar el contenido actualizado de `apps-script/productos.gs` en el editor de Apps Script.
-- Guardar el proyecto de Apps Script.
-- Ir a Deploy > Manage deployments.
-- Editar el Web App existente o crear una nueva version.
-- Seleccionar la nueva version y desplegar.
-- Mantener el acceso del Web App igual que el despliegue actual.
-- Si cambia la URL del Web App, actualizar `appsScriptUrl` en `src/config/apiConfig.js`.
-
-Apps Script soporta las acciones `listar`, `crear`, `editar`, `ocultar`, `reactivar` y `eliminarDefinitivo`, y devuelve respuestas JSON con `ok`, `producto`, `productos`, `id` o `error` segun corresponda.
